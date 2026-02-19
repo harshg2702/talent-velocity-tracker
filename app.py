@@ -1,13 +1,13 @@
 import streamlit as st
 import requests
-import openai
+from openai import OpenAI
 import json
 
 st.title("🚀 Workforce Intelligence Engine")
 
 PDL_API_KEY = st.secrets["PDL_API_KEY"]
 OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-openai.api_key = OPENAI_API_KEY
+
 
 company = st.text_input("Enter Company Name")
 
@@ -57,12 +57,19 @@ if company:
         Provide a concise VC-style analysis of workforce scale and likely growth stage.
         """
 
-        ai_response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
-            messages=[{"role": "user", "content": prompt}]
-        )
+      from openai import OpenAI
+client = OpenAI(api_key=OPENAI_API_KEY)
 
-        insight = ai_response.choices[0].message.content
+ai_response = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[
+        {"role": "system", "content": "You are a VC workforce intelligence analyst."},
+        {"role": "user", "content": prompt}
+    ]
+)
+
+insight = ai_response.choices[0].message.content
+
 
         st.subheader("🤖 AI Workforce Insight")
         st.write(insight)
