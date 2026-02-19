@@ -18,8 +18,11 @@ company = st.text_input("Enter Company Name")
 
 if st.button("Fetch Employee Count"):
 
-    if company:
+    if not company:
+        st.warning("Please enter a company name.")
+        st.stop()
 
+    try:
         api_key = st.secrets["RAPIDAPI_KEY"]
 
         querystring = {
@@ -32,38 +35,46 @@ if st.button("Fetch Employee Count"):
             "X-RapidAPI-Host": RAPID_HOST
         }
 
-        try:
-            response = requests.get(URL, headers=headers, params=querystring)
-            data = response.json()
+        response = requests.get(URL, headers=headers, params=querystring)
 
-            snippet = data["results"][0]["description"]
+        st.write("Status Code:", response.status_code)
 
-            match = re.search(r'([\d,]+)\s+employees', snippet)
+        data = response.json()
 
-            if match:
-                employee_count = int(match.group(1).replace(",", ""))
+        # Show full response for debugging
+        st.write("Raw API Response:")
+        st.json(data)
 
-                st.success(f"LinkedIn Employees: {employee_count}")
+        # Safe check for results
+        if "results" not in data or len(data["results"]) == 0:
+            st.error("No results found in API response.")
+            st.stop()
 
-                # Demo trend logic
-                previous_value = employee_count - 50
-                delta = employee_count - previous_value
+        snippet = data["results"][0].get("description", "")
 
-                if delta > 0:
-                    st.info(f"📈 Hiring Signal: +{delta} employees")
-                elif delta < 0:
-                    st.warning(f"📉 Contraction Signal: {delta} employees")
-                else:
-                    st.write("No change detected.")
+        match = re.search(r'([\d,]+)\s+employees', snippet)
 
-                st.write("Last Updated:", datetime.now())
+        if match:
+            employee_count = int(match.group(1).replace(",", ""))
 
+            st.success(f"LinkedIn Employees: {employee_count}")
+
+            # Demo trend logic
+            previous_value = employee_count - 50
+            delta = employee_count - previous_value
+
+            if delta > 0:
+                st.info(f"📈 Hiring Signal: +{delta} employees")
+            elif delta < 0:
+                st.warning(f"📉 Contraction Signal: {delta} employees")
             else:
-                st.error("Employee count not found in search results.")
+                st.write("No change detected.")
 
-        except Exception as e:
-            st.error("Could not fetch data.")
-            st.write(e)
+            st.write("Last Updated:", datetime.now())
 
-    else:
-        st.warning("Please enter a company name.")
+        else:
+            st.error("Employee count not found in search snippet.")
+
+    except Exception as e:
+        st.error("Something went wrong.")
+        st.write(e)
