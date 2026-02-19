@@ -19,8 +19,7 @@ if st.button("Fetch Employee Count"):
 
     querystring = {
         "query": f'site:linkedin.com/company {company} "employees"',
-        "limit": "5",
-        "related_keywords": "true"
+        "limit": "5"
     }
 
     headers = {
@@ -30,17 +29,14 @@ if st.button("Fetch Employee Count"):
 
     response = requests.get(url, headers=headers, params=querystring)
 
-    st.write("Status Code:", response.status_code)
-
-    data = response.json()
-    st.json(data)
-
     if response.status_code != 200:
-        st.error("API call failed.")
+        st.error("API call failed. Please try again.")
         st.stop()
 
-    if "results" not in data:
-        st.error("Unexpected response format.")
+    data = response.json()
+
+    if "results" not in data or len(data["results"]) == 0:
+        st.error("No results found.")
         st.stop()
 
     snippet = data["results"][0].get("description", "")
@@ -50,19 +46,8 @@ if st.button("Fetch Employee Count"):
     if match:
         employee_count = int(match.group(1).replace(",", ""))
 
-        st.success(f"LinkedIn Employees: {employee_count}")
-
-        previous_value = employee_count - 50
-        delta = employee_count - previous_value
-
-        if delta > 0:
-            st.info(f"📈 Hiring Signal: +{delta}")
-        elif delta < 0:
-            st.warning(f"📉 Contraction Signal: {delta}")
-        else:
-            st.write("No change detected.")
-
-        st.write("Last Updated:", datetime.now())
+        st.success(f"{company} has approximately {employee_count:,} employees")
+        st.caption(f"Last updated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     else:
-        st.error("Employee count not found in snippet.")
+        st.error("Employee count not found in search results.")
