@@ -1,76 +1,68 @@
 import streamlit as st
 import requests
-import json
-from openai import OpenAI
+import re
+from datetime import datetime
 
-st.title("🚀 Workforce Intelligence Engine")
+# -----------------------------
+# CONFIG
+# -----------------------------
+RAPID_API_KEY = "YOUR_RAPID_API_KEY"
+RAPID_HOST = "google-search74.p.rapidapi.com"
+URL = "https://google-search74.p.rapidapi.com/api/v1/search"
 
-PDL_API_KEY = st.secrets["PDL_API_KEY"]
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+# -----------------------------
+# STREAMLIT UI
+# -----------------------------
+st.title("📊 LinkedIn Workforce Velocity Tracker")
 
 company = st.text_input("Enter Company Name")
 
-if company:
+if st.button("Fetch Employee Count"):
 
-    st.write("🔎 Pulling structured workforce data from People Data Labs...")
+    if company:
 
-    url = "https://api.peopledatalabs.com/v5/company/search"
-
-    elastic_query = {
-        "query": {
-            "bool": {
-                "must": [
-                    {"match": {"name": company}}
-                ]
-            }
+        querystring = {
+            "q": f'site:linkedin.com/company {company} "employees"',
+            "limit": "5"
         }
-    }
 
-    params = {
-        "api_key": PDL_API_KEY,
-        "query": json.dumps(elastic_query),
-        "size": 1
-    }
+        headers = {
+            "X-RapidAPI-Key": RAPID_API_KEY,
+            "X-RapidAPI-Host": RAPID_HOST
+        }
 
-    response = requests.get(url, params=params)
-    data = response.json()
+        response = requests.get(URL, headers=headers, params=querystring)
+        data = response.json()
 
-    if response.status_code == 200 and data.get("data"):
+        try:
+            snippet = data["results"][0]["description"]
 
-        company_data = data["data"][0]
+            match = re.search(r'([\d,]+)\s+employees', snippet)
 
-        employee_count = company_data.get("employee_count", "Not Available")
-        industry = company_data.get("industry", "Not Available")
-        website = company_data.get("website", "Not Available")
+            if match:
+                employee_count = int(match.group(1).replace(",", ""))
 
-        st.subheader("📊 Structured Workforce Data (PDL)")
-        st.write(f"**Employee Count:** {employee_count}")
-        st.write(f"**Industry:** {industry}")
-        st.write(f"**Website:** {website}")
+                st.success(f"LinkedIn Employees: {employee_count}")
 
-        prompt = f"""
-        Company: {company}
-        Employee Count: {employee_count}
-        Industry: {industry}
+                # Simple demo trend logic (fake previous value)
+                previous_value = employee_count - 50  # simulate last snapshot
 
-        Provide a concise VC-style analysis of workforce scale and likely growth stage.
-        """
+                delta = employee_count - previous_value
 
-        ai_response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "You are a VC workforce intelligence analyst."},
-                {"role": "user", "content": prompt}
-            ]
-        )
+                if delta > 0:
+                    st.info(f"📈 Hiring Signal: +{delta} employees")
+                elif delta < 0:
+                    st.warning(f"📉 Contraction Signal: {delta} employees")
+                else:
+                    st.write("No change detected.")
 
-        insight = ai_response.choices[0].message.content
+                st.write("Last Updated:", datetime.now())
 
-        st.subheader("🤖 AI Workforce Insight")
-        st.write(insight)
+            else:
+                st.error("Employee count not found in search results.")
+
+        except:
+            st.error("Could not fetch data. Try another company.")
 
     else:
-        st.error("No structured company match found in People Data Labs.")
-        st.json(data)
+        st.warning("Please enter a company name.")
