@@ -1,6 +1,7 @@
 import streamlit as st
 import requests
 import openai
+import json
 
 st.title("🚀 Workforce Intelligence Engine")
 
@@ -16,9 +17,19 @@ if company:
 
     url = "https://api.peopledatalabs.com/v5/company/search"
 
+    elastic_query = {
+        "query": {
+            "bool": {
+                "must": [
+                    {"match": {"name": company}}
+                ]
+            }
+        }
+    }
+
     params = {
         "api_key": PDL_API_KEY,
-        "query": f'name:"{company}"',
+        "query": json.dumps(elastic_query),
         "size": 1
     }
 
@@ -58,5 +69,4 @@ if company:
 
     else:
         st.error("No structured company match found in People Data Labs.")
-        st.write("Raw API response:")
         st.json(data)
