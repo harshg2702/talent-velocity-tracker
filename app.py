@@ -3,8 +3,8 @@ import requests
 import openai
 import pandas as pd
 
-SERP_API_KEY = st.secrets["SERP_API_KEY"]
-OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+SERP_API_KEY = st.secrets
+OPENAI_API_KEY = st.secrets
 
 openai.api_key = OPENAI_API_KEY
 
@@ -17,7 +17,7 @@ if company:
     params = {
         "engine": "google_jobs",
         "q": f"{company} jobs",
-        "api_key": SERP_API_KEY
+        "api_key":
     }
 
     response = requests.get("https://serpapi.com/search", params=params)
