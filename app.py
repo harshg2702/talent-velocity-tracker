@@ -15,11 +15,12 @@ if st.button("Fetch Employee Count"):
 
     api_key = st.secrets["RAPIDAPI_KEY"]
 
-    url = "https://google-search74.p.rapidapi.com/api/v1/search"
+    url = "https://google-search74.p.rapidapi.com/"
 
     querystring = {
-        "q": f'site:linkedin.com/company {company} "employees"',
-        "limit": "5"
+        "query": f'site:linkedin.com/company {company} "employees"',
+        "limit": "5",
+        "related_keywords": "true"
     }
 
     headers = {
