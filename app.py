@@ -6,7 +6,6 @@ from datetime import datetime
 # -----------------------------
 # CONFIG
 # -----------------------------
-RAPID_API_KEY = "YOUR_RAPID_API_KEY"
 RAPID_HOST = "google-search74.p.rapidapi.com"
 URL = "https://google-search74.p.rapidapi.com/api/v1/search"
 
@@ -21,40 +20,22 @@ if st.button("Fetch Employee Count"):
 
     if company:
 
+        api_key = st.secrets["RAPIDAPI_KEY"]
+
         querystring = {
             "q": f'site:linkedin.com/company {company} "employees"',
             "limit": "5"
         }
 
         headers = {
-            "X-RapidAPI-Key": RAPID_API_KEY,
+            "X-RapidAPI-Key": api_key,
             "X-RapidAPI-Host": RAPID_HOST
         }
 
-       import requests
-import streamlit as st
-
-if st.button("Search"):
-
-    api_key = st.secrets["RAPIDAPI_KEY"]
-
-    url = "https://real-time-linkedin-scraper-api.p.rapidapi.com/search"
-
-    querystring = {
-        "query": "fintech founders india"
-    }
-
-    headers = {
-        "X-RapidAPI-Key": api_key,
-        "X-RapidAPI-Host": "real-time-linkedin-scraper-api.p.rapidapi.com"
-    }
-
-    response = requests.get(url, headers=headers, params=querystring)
-
-    st.json(response.json())
-
-
         try:
+            response = requests.get(URL, headers=headers, params=querystring)
+            data = response.json()
+
             snippet = data["results"][0]["description"]
 
             match = re.search(r'([\d,]+)\s+employees', snippet)
@@ -64,9 +45,8 @@ if st.button("Search"):
 
                 st.success(f"LinkedIn Employees: {employee_count}")
 
-                # Simple demo trend logic (fake previous value)
-                previous_value = employee_count - 50  # simulate last snapshot
-
+                # Demo trend logic
+                previous_value = employee_count - 50
                 delta = employee_count - previous_value
 
                 if delta > 0:
@@ -81,8 +61,9 @@ if st.button("Search"):
             else:
                 st.error("Employee count not found in search results.")
 
-        except:
-            st.error("Could not fetch data. Try another company.")
+        except Exception as e:
+            st.error("Could not fetch data.")
+            st.write(e)
 
     else:
         st.warning("Please enter a company name.")
