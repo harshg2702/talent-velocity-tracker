@@ -1,35 +1,62 @@
 import streamlit as st
 import requests
+import openai
 
-st.title("🚀 Talent Velocity Tracker")
+st.title("🚀 Workforce Intelligence Engine")
+
+PDL_API_KEY = st.secrets["PDL_API_KEY"]
+OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
+openai.api_key = OPENAI_API_KEY
 
 company = st.text_input("Enter Company Name")
 
 if company:
 
-    # Pull data automatically from Wikipedia (Free API)
-    url = f"https://en.wikipedia.org/api/rest_v1/page/summary/{company}"
-    response = requests.get(url)
+    st.write("🔎 Pulling structured workforce data from People Data Labs...")
 
-    if response.status_code == 200:
-        data = response.json()
-        summary = data.get("extract", "No summary found.")
+    url = "https://api.peopledatalabs.com/v5/company/search"
 
-        st.subheader("📊 Auto-Pulled Company Data")
-        st.write(summary)
+    params = {
+        "api_key": PDL_API_KEY,
+        "query": f'name:"{company}"',
+        "size": 1
+    }
 
-        st.subheader("🤖 AI Insight")
-        st.write(f"""
-        Based on publicly available information, {company} appears to be operating
-        at meaningful scale.
+    response = requests.get(url, params=params)
+    data = response.json()
 
-        Strategic signals:
-        - Established market presence
-        - Public visibility indicates hiring potential
-        - Opportunity for enterprise engagement
+    if response.status_code == 200 and data.get("data"):
 
-        (AI-generated strategic summary)
-        """)
+        company_data = data["data"][0]
+
+        employee_count = company_data.get("employee_count", "Not Available")
+        industry = company_data.get("industry", "Not Available")
+        website = company_data.get("website", "Not Available")
+
+        st.subheader("📊 Structured Workforce Data (PDL)")
+        st.write(f"**Employee Count:** {employee_count}")
+        st.write(f"**Industry:** {industry}")
+        st.write(f"**Website:** {website}")
+
+        prompt = f"""
+        Company: {company}
+        Employee Count: {employee_count}
+        Industry: {industry}
+
+        Provide a concise VC-style analysis of workforce scale and likely growth stage.
+        """
+
+        ai_response = openai.ChatCompletion.create(
+            model="gpt-4o-mini",
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        insight = ai_response.choices[0].message.content
+
+        st.subheader("🤖 AI Workforce Insight")
+        st.write(insight)
 
     else:
-        st.error("Company not found. Try another name.")
+        st.error("No structured company match found in People Data Labs.")
+        st.write("Raw API response:")
+        st.json(data)
