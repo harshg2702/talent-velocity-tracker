@@ -31,8 +31,28 @@ if st.button("Fetch Employee Count"):
             "X-RapidAPI-Host": RAPID_HOST
         }
 
-        response = requests.get(URL, headers=headers, params=querystring)
-        data = response.json()
+       import requests
+import streamlit as st
+
+if st.button("Search"):
+
+    api_key = st.secrets["RAPIDAPI_KEY"]
+
+    url = "https://real-time-linkedin-scraper-api.p.rapidapi.com/search"
+
+    querystring = {
+        "query": "fintech founders india"
+    }
+
+    headers = {
+        "X-RapidAPI-Key": api_key,
+        "X-RapidAPI-Host": "real-time-linkedin-scraper-api.p.rapidapi.com"
+    }
+
+    response = requests.get(url, headers=headers, params=querystring)
+
+    st.json(response.json())
+
 
         try:
             snippet = data["results"][0]["description"]
